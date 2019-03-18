@@ -1,6 +1,3 @@
-# laravel-docker
-Docker running Nginx, PHP-FPM, MySQL, PostgresDB, MongoDB, Redis
-
 # Configurações
 
 Passo a passo de como usar docker
@@ -19,7 +16,7 @@ https://hub.docker.com/editions/community/docker-ce-desktop-mac
 
 Dentro do projeto do docker renomeie o arquivo *env-example*  para *.env* e substitua dentro dele `APPLICATION` com o path de onde esta o projeto. 
 
-Ex `APPLICATION=/private/var/www/nome_projeto` (não é aconselhável ficar dentro de `/Documents`, caso for MAC)
+Ex `APPLICATION=/private/var/www/book` (não é aconselhável ficar dentro de `/Documents`)
 
 Coloque nas variáveis do `mysql` e `mongo` os respectivos users e senhas desejados no `.env`:
 
@@ -29,13 +26,13 @@ Ex.: `MONGODB_USER=root`
 
 No arquivo de hosts do sistema, coloque o host desejado:
 
-Ex.: `127.0.0.1 nomedesjado`
+Ex.: `127.0.0.1 book infofin`
 
 Deve-se modificar também no arquivo de configuração do nginx, linha 3 (não e necessário mudar o nome do arquivo, mas pode se quiser)
 
-Localizado no projeto docker-laravel em nginx -> sites -> nomedesjado.conf
+Localizado no projeto docker-laravel em nginx -> sites -> book.conf
 
-    server_name nomedesjado; #linha 3
+    server_name book; #linha 3
 
 ## Execução
 
