@@ -25,7 +25,7 @@ Coloque nas variáveis do `mysql` e `mongo` os respectivos users e senhas deseja
 
 Ex.: `MONGODB_USER=root`
 
-## hosts
+## Hosts
 
 No arquivo de hosts do sistema, coloque o host desejado:
 
