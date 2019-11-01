@@ -11,6 +11,12 @@ postgres/data/
 # ignora tudo no diretório "nginx/logs"
 nginx/logs/
 
+# ignora tudo no diretório "mongodb/data"
+mongodb/data/
+
+# ignora tudo no diretório "mysql/data"
+mysql/data/
+
 # ignora tudo no diretório "nginx/sites", exceto:
 nginx/sites/*
 !nginx/sites/example.nginx.conf

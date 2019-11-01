@@ -24,6 +24,7 @@ services:
         extra_hosts:
             - "${HOSTS}:172.30.0.1"
         depends_on:
+            - php-fpm
     php-fpm:
         container_name: php-fpm
         restart: always
@@ -136,6 +137,7 @@ services:
             - ${JENKINS_HOME}:/jenkins_home
             - /var/run/docker.sock:/var/run/docker.sock
         networks:
+            - code-network
 networks:
     code-network:
         driver: bridge
@@ -149,3 +151,4 @@ volumes:
   pgdata:
     external: true
   jenkinsdata:
+    external: true
