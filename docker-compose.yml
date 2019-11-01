@@ -1,4 +1,4 @@
-version: '3'
+version: '3.5'
 services:
     nginx:
         container_name: nginx
@@ -7,8 +7,7 @@ services:
             context: ./nginx
             dockerfile: Dockerfile
         volumes:
-            - ${APPLICATION}:/var/www/project
-            - ${APPLICATION_API}:/var/www/project-api
+            - ${APPLICATIONS}:/var/www
             - ${NGINX_HOST_LOG_PATH}:/var/log/nginx
             - ${NGINX_SITES_PATH}:/etc/nginx/conf.d
             - ${NGINX_SSL_PATH}:/etc/nginx/ssl
@@ -17,57 +16,67 @@ services:
             - "${NGINX_HOST_HTTPS_PORT}:443"
         links:
             - php-fpm
+        expose:
+            - "80"
+            - "443"
         networks:
             - code-network
+        extra_hosts:
+            - "${HOSTS}:172.30.0.1"
+        depends_on:
     php-fpm:
         container_name: php-fpm
         restart: always
         build:
             context: ./php-fpm
             args:
-                - PHP_VERSION=${PHP_VERSION}
-                - INSTALL_FTP=${PHP_FPM_INSTALL_FTP}
+                - INSTALL_BCMATH=${PHP_FPM_INSTALL_BCMATH}
+                - INSTALL_CALENDAR=${PHP_FPM_INSTALL_CALENDAR}
+                - INSTALL_COMPOSER=${PHP_FPM_INSTALL_COMPOSER}
+                - INSTALL_CURL=${PHP_FPM_INSTALL_CURL}
+                - INSTALL_GMP=${PHP_FPM_INSTALL_GMP}
+                - INSTALL_INTL=${PHP_FPM_INSTALL_INTL}
+                - INSTALL_JSON_XML=${PHP_FPM_INSTALL_JSON_XML}
                 - INSTALL_MBSTRING=${PHP_FPM_INSTALL_MBSTRING}
                 - INSTALL_MCRYPT=${PHP_FPM_INSTALL_MCRYPT}
-                - INSTALL_PDO_MYSQL=${PHP_FPM_INSTALL_PDO_MYSQL}
-                - INSTALL_PDO_POSTGRESQL=${PHP_FPM_INSTALL_PDO_POSTGRESQL}
-                - INSTALL_MYSQLI=${PHP_FPM_INSTALL_MYSQLI}
-                - INSTALL_BCMATH=${PHP_FPM_INSTALL_BCMATH}
-                - INSTALL_OPCACHE=${PHP_FPM_INSTALL_OPCACHE}
-                - INSTALL_INTL=${PHP_FPM_INSTALL_INTL}
-                - INSTALL_XDEBUG=${PHP_FPM_INSTALL_XDEBUG}
-                - INSTALL_CURL=${PHP_FPM_INSTALL_CURL}
-                - INSTALL_OPENSSL=${PHP_FPM_INSTALL_OPENSSL}
-                - INSTALL_COMPOSER=${PHP_FPM_INSTALL_COMPOSER}
                 - INSTALL_MONGO=${PHP_FPM_INSTALL_MONGODB}
+                - INSTALL_OPCACHE=${PHP_FPM_INSTALL_OPCACHE}
+                - INSTALL_OPENSSL=${PHP_FPM_INSTALL_OPENSSL}
                 - INSTALL_PCNTL=${PHP_FPM_INSTALL_PCNTL}
+                - INSTALL_PDO_POSTGRESQL=${PHP_FPM_INSTALL_PDO_POSTGRESQL}
+                - INSTALL_SOAP=${PHP_FPM_INSTALL_SOAP}
+                - INSTALL_TOKENIZER=${PHP_FPM_INSTALL_TOKENIZER}
+                - INSTALL_XDEBUG=${PHP_FPM_INSTALL_XDEBUG}
+                - INSTALL_GRPC=${PHP_FPM_INSTALL_GRPC}
             dockerfile: Dockerfile
         expose:
             - "9000"
+        extra_hosts:
+            - "${HOSTS}:172.30.0.1"
         volumes:
-            - ${APPLICATION}:/var/www/project
-            - ${APPLICATION_API}:/var/www/project-api
+            - ${APPLICATIONS}:/var/www
+            - ${PHP_FPM_BASH_PATH}:/root/.bash_history
         networks:
             - code-network
     mysql:
-      container_name: mysql
-      restart: always
-      build:
-        context: ./mysql
-        dockerfile: Dockerfile
-      environment:
-        - MYSQL_DATABASE=${MYSQL_DATABASE}
-        - MYSQL_USER=${MYSQL_USER}
-        - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-        - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-        - TZ=${WORKSPACE_TIMEZONE}
-      volumes:
-        - ${MYSQL_DATA}/mysql:/var/lib/mysql
-        - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
-      ports:
-        - "${MYSQL_PORT}:3306"
-      networks:
-        - code-network
+        container_name: mysql
+        restart: always
+        build:
+            context: ./mysql
+            dockerfile: Dockerfile
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+            - TZ=${WORKSPACE_TIMEZONE}
+        volumes:
+            - ${MYSQL_DATA}/mysql:/var/lib/mysql
+            - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+        ports:
+            - "${MYSQL_PORT}:3306"
+        networks:
+            - code-network
     mongodb:
         container_name: 'mongodb'
         restart: always
@@ -89,7 +98,9 @@ services:
         build:
             context: ./postgres
             dockerfile: Dockerfile
+            shm_size: '2gb'
         volumes:
+            - ${APPLICATIONS}:/var/www
             - pgdata:/var/lib/postgresql/data
         ports:
             - "5432:5432"
@@ -104,14 +115,37 @@ services:
         build:
             context: ./redis
             dockerfile: Dockerfile
-        network_mode: bridge
         ports:
             - "6379:6379"
         volumes:
             - '${REDIS_DATA}:/data/redis'
+        networks:
+            - code-network
+    jenkins:
+        container_name: jenkins
+        environment:
+            JAVA_OPTS: "-Djava.awt.headless=true"
+        build:
+            context: ./jenkins
+            dockerfile: Dockerfile
+        privileged: true
+        ports:
+            - "${JENKINS_HOST_SLAVE_AGENT_PORT}:50000"
+            - "${JENKINS_HOST_HTTP_PORT}:8080"
+        volumes:
+            - ${JENKINS_HOME}:/jenkins_home
+            - /var/run/docker.sock:/var/run/docker.sock
+        networks:
 networks:
     code-network:
         driver: bridge
+networks:
+    code-network:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.30.0.0/16
 volumes:
   pgdata:
     external: true
+  jenkinsdata:

@@ -6,7 +6,8 @@
 # Caminho da Aplicação #
 #----------------------#
 APPLICATION=/path/to/project
-APPLICATION_API=/path/to/project-api
+
+HOSTS=gateway-api-local gateway-app-local
 
 #-----------------------------#
 # Customização dos Containers #
@@ -24,27 +25,29 @@ NGINX_SSL_PATH=./nginx/ssl/
 #---------#
 # PHP_FPM #
 #---------#
-PHP_VERSION=7.3
-PHP_FPM_INSTALL_GD=true
-PHP_FPM_INSTALL_COMPRESSION=true
-PHP_FPM_INSTALL_FTP=true
-PHP_FPM_INSTALL_MCRYPT=true
-PHP_FPM_INSTALL_PDO_MYSQL=true
-PHP_FPM_INSTALL_PDO_POSTGRESQL=true
-PHP_FPM_INSTALL_MBSTRING=true
-PHP_FPM_INSTALL_BCMATH=false
-PHP_FPM_INSTALL_OPCACHE=false
-PHP_FPM_INSTALL_MYSQLI=false
-PHP_FPM_INSTALL_XDEBUG=true
+PHP_FPM_INSTALL_BCMATH=true
+PHP_FPM_INSTALL_CALENDAR=true
+PHP_FPM_INSTALL_GRPC=true
 PHP_FPM_INSTALL_COMPOSER=true
-PHP_FPM_INSTALL_TOKENIZER=true
-PHP_FPM_INSTALL_JSON_XML=true
+PHP_FPM_INSTALL_COMPRESSION=true
 PHP_FPM_INSTALL_CURL=true
-PHP_FPM_INSTALL_OPENSSL=true
-PHP_FPM_INSTALL_INTL=false
-PHP_FPM_INSTALL_MONGODB=false
-PHP_FPM_INSTALL_PCNTL=true
+PHP_FPM_INSTALL_FTP=true
+PHP_FPM_INSTALL_GD=true
 PHP_FPM_INSTALL_GMP=true
+PHP_FPM_INSTALL_INTL=true
+PHP_FPM_INSTALL_JSON_XML=true
+PHP_FPM_INSTALL_MBSTRING=true
+PHP_FPM_INSTALL_MCRYPT=true
+PHP_FPM_INSTALL_MONGODB=true
+PHP_FPM_INSTALL_OPCACHE=false
+PHP_FPM_INSTALL_OPENSSL=true
+PHP_FPM_INSTALL_MYSQLI=true
+PHP_FPM_INSTALL_PCNTL=true
+PHP_FPM_INSTALL_PDO_POSTGRESQL=true
+PHP_FPM_INSTALL_SOAP=true
+PHP_FPM_INSTALL_TOKENIZER=true
+PHP_FPM_INSTALL_XDEBUG=true
+PHP_FPM_BASH_PATH=./php-fpm/.bash_history
 
 #-------#
 # MYSQL #
@@ -58,7 +61,7 @@ MYSQL_DATA=./mysql/data/
 MYSQL_ENTRYPOINT_INITDB=./mysql/docker-entrypoint-initdb.d
 
 #-------#
-# MYSQL #
+# MONGODB #
 #-------#
 MONGODB_USER=root
 MONGODB_PASS=pass
@@ -68,12 +71,18 @@ MONGODB_DATA=./mongodb/data/db
 #----------#
 # POSTGRES #
 #----------#
-POSTGRES_DATA=./postgres/data/db
+POSTGRES_DATA=./postgres/data/db/
 POSTGRES_USER=root
-POSTGRES_PASS=password
+POSTGRES_PASS=123456
 
 #-------#
 # REDIS #
 #-------#
-REDIS_DATA=./redis/data/db
+REDIS_DATA=./redis/data/
 
+#---------#
+# JENKINS #
+#---------#
+JENKINS_HOST_HTTP_PORT=8090
+JENKINS_HOST_SLAVE_AGENT_PORT=50000
+JENKINS_HOME=./jenkins/jenkins_home

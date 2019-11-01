@@ -1,15 +1,22 @@
 
 FROM php:7.3-fpm
 
+LABEL maintainer="José Francisco Chacon <jose.fcts@gmail.com>"
+
+RUN unlink /etc/localtime
+RUN ln -s /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
+
 # always run apt update when start and after add new source list, then clean up at end.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     curl \
+    procps \
     libmemcached-dev \
     libz-dev \
     libpq-dev \
     libjpeg-dev \
     libpng-dev \
+    libzip-dev \
     libfreetype6-dev \
     libssl-dev \
     libmcrypt-dev \
@@ -18,14 +25,27 @@ RUN apt-get update \
     unzip \
     wget \
     vim \
+    zip \
+    nano \
+    ghostscript \
+    supervisor \
   && rm -rf /var/lib/apt/lists/*
 
-RUN docker-php-ext-install pdo_mysql \
-  && docker-php-ext-install pdo_pgsql \
+# RUN apt-get install bash
+
+RUN docker-php-ext-install pdo_pgsql \
+  && docker-php-ext-configure zip --with-libzip \
+  && docker-php-ext-install zip \
+  && docker-php-ext-install pdo_mysql \
   && docker-php-ext-configure gd \
     --with-jpeg-dir=/usr/lib \
     --with-freetype-dir=/usr/include/freetype2 && \
     docker-php-ext-install gd
+
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
+
+RUN apt update -yqq && \
+    apt-get install -y nodejs
 
 #
 #--------------------------------------------------------------------------
@@ -37,35 +57,6 @@ RUN docker-php-ext-install pdo_mysql \
 # Example:
 #   - INSTALL_ZIP_ARCHIVE=true
 #
-
-###########################################################################
-# SSH2:
-###########################################################################
-
-ARG INSTALL_SSH2=false
-
-RUN if [ ${INSTALL_SSH2} = true ]; then \
-    # Install the ssh2 extension
-    apt-get -y install libssh2-1-dev && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-        pecl install -a ssh2-0.13; \
-    else \
-        pecl install -a ssh2-1.1.2; \
-    fi && \
-    docker-php-ext-enable ssh2 \
-;fi
-
-###########################################################################
-# libfaketime:
-###########################################################################
-
-USER root
-
-ARG INSTALL_FAKETIME=false
-
-RUN if [ ${INSTALL_FAKETIME} = true ]; then \
-    apt-get install -y libfaketime \
-;fi
 
 ###########################################################################
 # SOAP:
@@ -92,57 +83,22 @@ RUN if [ ${INSTALL_PGSQL} = true ]; then \
 ;fi
 
 ###########################################################################
-# pgsql client
-###########################################################################
-
-ARG INSTALL_PG_CLIENT=false
-
-RUN if [ ${INSTALL_PG_CLIENT} = true ]; then \
-    # Create folders if not exists (https://github.com/tianon/docker-brew-debian/issues/65)
-    mkdir -p /usr/share/man/man1 && \
-    mkdir -p /usr/share/man/man7 && \
-    # Install the pgsql client
-    apt-get install -y postgresql-client \
-;fi
-
-###########################################################################
 # xdebug:
 ###########################################################################
 
 ARG INSTALL_XDEBUG=false
 RUN if [ ${INSTALL_XDEBUG} = true ]; then \
     # Install the xdebug
-	  pecl install xdebug \
+	  pecl install xdebug; \
     docker-php-ext-enable xdebug \
 ;fi
 
 # Copy xdebug configration
 COPY ./xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 
-###########################################################################
-# Phpdbg:
-###########################################################################
-
-ARG INSTALL_PHPDBG=false
-
-RUN if [ ${INSTALL_PHPDBG} = true ]; then \
-    # Load the xdebug extension only with phpunit commands
-    apt-get install -y --force-yes php7.2-phpdbg \
-;fi
-
-###########################################################################
-# Blackfire:
-###########################################################################
-
-ARG INSTALL_BLACKFIRE=false
-
-RUN if [ ${INSTALL_XDEBUG} = false -a ${INSTALL_BLACKFIRE} = true ]; then \
-    version=$(php -r "echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;") \
-    && curl -A "Docker" -o /tmp/blackfire-probe.tar.gz -D - -L -s https://blackfire.io/api/v1/releases/probe/php/linux/amd64/$version \
-    && tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp \
-    && mv /tmp/blackfire-*.so $(php -r "echo ini_get('extension_dir');")/blackfire.so \
-    && printf "extension=blackfire.so\nblackfire.agent_socket=tcp://blackfire:8707\n" > $PHP_INI_DIR/conf.d/blackfire.ini \
-;fi
+RUN sed -i "s/xdebug.remote_autostart=0/xdebug.remote_autostart=1/" /usr/local/etc/php/conf.d/xdebug.ini && \
+    sed -i "s/xdebug.remote_enable=0/xdebug.remote_enable=1/" /usr/local/etc/php/conf.d/xdebug.ini && \
+    sed -i "s/xdebug.cli_color=0/xdebug.cli_color=1/" /usr/local/etc/php/conf.d/xdebug.ini
 
 ###########################################################################
 # PHP REDIS EXTENSION
@@ -155,26 +111,6 @@ RUN if [ ${INSTALL_PHPREDIS} = true ]; then \
     printf "\n" | pecl install -o -f redis \
     &&  rm -rf /tmp/pear \
     &&  docker-php-ext-enable redis \
-;fi
-
-###########################################################################
-# Swoole EXTENSION
-###########################################################################
-
-ARG INSTALL_SWOOLE=false
-
-RUN if [ ${INSTALL_SWOOLE} = true ]; then \
-    # Install Php Swoole Extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install swoole-2.0.11; \
-    else \
-      if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-        pecl install swoole-2.2.0; \
-      else \
-        pecl install swoole; \
-      fi \
-    fi && \
-    docker-php-ext-enable swoole \
 ;fi
 
 ###########################################################################
@@ -191,19 +127,6 @@ RUN if [ ${INSTALL_MONGO} = true ]; then \
     ;fi && \
     pecl install mongodb && \
     docker-php-ext-enable mongodb \
-;fi
-
-###########################################################################
-# AMQP:
-###########################################################################
-
-ARG INSTALL_AMQP=false
-
-RUN if [ ${INSTALL_AMQP} = true ]; then \
-    apt-get install librabbitmq-dev -y && \
-    # Install the amqp extension
-    pecl install amqp && \
-    docker-php-ext-enable amqp \
 ;fi
 
 ###########################################################################
@@ -233,7 +156,7 @@ RUN if [ ${INSTALL_PCNTL} = true ]; then \
 # bcmath:
 ###########################################################################
 
-ARG INSTALL_BCMATH=true
+ARG INSTALL_BCMATH=false
 
 RUN if [ ${INSTALL_BCMATH} = true ]; then \
     # Install the bcmath extension
@@ -247,25 +170,21 @@ RUN if [ ${INSTALL_BCMATH} = true ]; then \
 ARG INSTALL_GMP=false
 
 RUN if [ ${INSTALL_GMP} = true ]; then \
-    # Install the gmp extension
+    # Install the GMP extension
     apt-get update && \
-    apt-get -y install libgmp-dev && \
+	  apt-get install -y libgmp-dev && \
     docker-php-ext-install gmp \
 ;fi
 
 ###########################################################################
 # PHP Memcached:
-###########################################################################
+###########################################################################Fintl
 
 ARG INSTALL_MEMCACHED=false
 
 RUN if [ ${INSTALL_MEMCACHED} = true ]; then \
     # Install the php memcached extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      curl -L -o /tmp/memcached.tar.gz "https://github.com/php-memcached-dev/php-memcached/archive/2.2.0.tar.gz"; \
-    else \
-      curl -L -o /tmp/memcached.tar.gz "https://github.com/php-memcached-dev/php-memcached/archive/php7.tar.gz"; \
-    fi \
+    curl -L -o /tmp/memcached.tar.gz "https://github.com/php-memcached-dev/php-memcached/archive/2.2.0.tar.gz" \
     && mkdir -p memcached \
     && tar -C memcached -zxvf /tmp/memcached.tar.gz --strip 1 \
     && ( \
@@ -290,6 +209,7 @@ RUN if [ ${INSTALL_EXIF} = true ]; then \
     # Enable Exif PHP extentions requirements
     docker-php-ext-install exif \
 ;fi
+
 ###########################################################################
 # Opcache:
 ###########################################################################
@@ -302,17 +222,6 @@ RUN if [ ${INSTALL_OPCACHE} = true ]; then \
 
 # Copy opcache configration
 COPY ./opcache.ini /usr/local/etc/php/conf.d/opcache.ini
-
-###########################################################################
-# Mysqli Modifications:
-###########################################################################
-
-ARG INSTALL_MYSQLI=false
-
-RUN if [ ${INSTALL_MYSQLI} = true ]; then \
-    docker-php-ext-install mysqli \
-;fi
-
 
 ###########################################################################
 # Human Language and Character Encoding Support:
@@ -328,6 +237,17 @@ RUN if [ ${INSTALL_INTL} = true ]; then \
 ;fi
 
 ###########################################################################
+# Mysqli Modifications:
+###########################################################################
+
+ARG INSTALL_MYSQLI=false
+
+RUN if [ ${INSTALL_MYSQLI} = true ]; then \
+    docker-php-ext-install mysqli \
+;fi
+
+
+###########################################################################
 # LDAP:
 ###########################################################################
 
@@ -337,42 +257,6 @@ RUN if [ ${INSTALL_LDAP} = true ]; then \
     apt-get install -y libldap2-dev && \
     docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ && \
     docker-php-ext-install ldap \
-;fi
-
-###########################################################################
-# SQL SERVER:
-###########################################################################
-
-ARG INSTALL_MSSQL=false
-
-RUN set -eux; if [ ${INSTALL_MSSQL} = true ]; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      apt-get -y install freetds-dev libsybdb5 \
-      && ln -s /usr/lib/x86_64-linux-gnu/libsybdb.so /usr/lib/libsybdb.so \
-      && docker-php-ext-install mssql pdo_dblib \
-      && php -m | grep -q 'mssql' \
-      && php -m | grep -q 'pdo_dblib' \
-    ;else \
-      ###########################################################################
-      # Ref from https://github.com/Microsoft/msphpsql/wiki/Dockerfile-for-adding-pdo_sqlsrv-and-sqlsrv-to-official-php-image
-      ###########################################################################
-      # Add Microsoft repo for Microsoft ODBC Driver 13 for Linux
-      apt-get install -y apt-transport-https gnupg \
-      && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-      && curl https://packages.microsoft.com/config/debian/9/prod.list > /etc/apt/sources.list.d/mssql-release.list \
-      && apt-get update -yqq \
-      # Install Dependencies
-      && ACCEPT_EULA=Y apt-get install -y unixodbc unixodbc-dev libgss3 odbcinst msodbcsql17 locales \
-      && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
-      # link local aliases
-      && ln -sfn /etc/locale.alias /usr/share/locale/locale.alias \
-      && locale-gen \
-      # Install pdo_sqlsrv and sqlsrv from PECL. Replace pdo_sqlsrv-4.1.8preview with preferred version.
-      && pecl install pdo_sqlsrv sqlsrv \
-      && docker-php-ext-enable pdo_sqlsrv sqlsrv \
-      && php -m | grep -q 'pdo_sqlsrv' \
-      && php -m | grep -q 'sqlsrv' \
-    ;fi \
 ;fi
 
 ###########################################################################
@@ -442,6 +326,17 @@ RUN if [ ${INSTALL_YAML} = true ]; then \
 ;fi
 
 ###########################################################################
+# GRPC:
+###########################################################################
+
+ARG INSTALL_GRPC=false
+
+RUN if [ ${INSTALL_GRPC} = true ]; then \
+     pecl install grpc \
+     docker-php-ext-enable grpc \
+;fi
+
+###########################################################################
 # COMPOSER:
 ###########################################################################
 
@@ -455,20 +350,37 @@ RUN if [ ${INSTALL_COMPOSER} = true ]; then \
     printf "\nPATH=\"~/.composer/vendor/bin:\$PATH\"\n" | tee -a ~/.bashrc \
 ;fi
 
+RUN composer global require "squizlabs/php_codesniffer=*"
+
 ###########################################################################
 # Check PHP version:
 ###########################################################################
 
-RUN php -v | head -n 1 | grep -q "PHP 7.2"
+RUN php -v | head -n 1 | grep -q "PHP 7.3"
+
+###########################################################################
+# Configure supervisor:
+###########################################################################
+
+COPY ./laravel-worker.conf /etc/supervisor/conf.d
+RUN mkdir /var/log/supervisor/gateway
+RUN echo 'alias startsupervisor="supervisord -c /etc/supervisor/supervisord.conf"' >> ~/.bashrc
+
+###########################################################################
+# Configure npm modules for laravel queues:
+###########################################################################
+
+RUN npm install -g uuid
+RUN npm install -g node-rsa
+RUN npm install -g randomstring
+RUN npm install -g minimist
 
 #
 #--------------------------------------------------------------------------
 # Final Touch
 #--------------------------------------------------------------------------
 #
-
 COPY ./laravel.ini /usr/local/etc/php/conf.d
-COPY ./xlaravel.pool.conf /usr/local/etc/php-fpm.d/
 
 USER root
 
@@ -477,5 +389,5 @@ RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     rm /var/log/lastlog /var/log/faillog
 
-WORKDIR /var/www/project
+WORKDIR /var/www
 EXPOSE 9000

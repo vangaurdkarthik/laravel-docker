@@ -2,18 +2,19 @@
 # .gitignore para Docker
 # -----------------------------------------------------------------
 
-# ignora tudo no diretório "mysql/data"
-mysql/data/
+# ignora tudo no diretório "redis/data"
+redis/data/
 
-# ignora tudo no diretório "mongodb/data"
-mongodb/data/
+# ignora tudo no diretório "postgres/data"
+postgres/data/
 
 # ignora tudo no diretório "nginx/logs"
 nginx/logs/
 
 # ignora tudo no diretório "nginx/sites", exceto:
 nginx/sites/*
-!nginx/sites/project.conf
+!nginx/sites/example.nginx.conf
+!nginx/sites/example.apache.conf
 
 # ignora todos os arquivos iniciados com .
 .*
