@@ -1,6 +1,6 @@
 FROM mongo:latest
 
-#COPY mongo.conf /usr/local/etc/mongo/mongo.conf
+LABEL maintainer="José Francisco Chacon <jose.fcts@gmail.com>"
 
 CMD ["mongod"]
 

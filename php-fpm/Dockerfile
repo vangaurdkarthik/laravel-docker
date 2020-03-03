@@ -1,48 +1,60 @@
 
-FROM php:7.3-fpm
+ FROM php:7.4-fpm
 
 LABEL maintainer="José Francisco Chacon <jose.fcts@gmail.com>"
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get upgrade -y; \
+    apt-get install -y --no-install-recommends \
+            curl \
+            nano \
+            git \
+            wget \
+            bash \
+            unzip \
+            supervisor \
+            libmemcached-dev \
+            libz-dev \
+            libpq-dev \
+            libjpeg-dev \
+            libpng-dev \
+            libfreetype6-dev \
+            libssl-dev \
+            libmcrypt-dev \
+            libonig-dev; \
+    rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+    docker-php-ext-install pdo_mysql; \
+    docker-php-ext-install pdo_pgsql; \
+    docker-php-ext-configure gd \
+            --prefix=/usr \
+            --with-jpeg \
+            --with-freetype; \
+    docker-php-ext-install gd; \
+    php -r 'var_dump(gd_info());'
 
 RUN unlink /etc/localtime
 RUN ln -s /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 
-# always run apt update when start and after add new source list, then clean up at end.
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-    curl \
-    procps \
-    libmemcached-dev \
-    libz-dev \
-    libpq-dev \
-    libjpeg-dev \
-    libpng-dev \
-    libzip-dev \
-    libfreetype6-dev \
-    libssl-dev \
-    libmcrypt-dev \
-    bash \
-    git \
-    unzip \
-    wget \
-    vim \
-    zip \
-    nano \
-    ghostscript \
-    supervisor \
-  && rm -rf /var/lib/apt/lists/*
+ARG CHANGE_SOURCE=false
+RUN if [ ${CHANGE_SOURCE} = true ]; then \
+    # Change application source from deb.debian.org to aliyun source
+    sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
+    sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list && \
+    sed -i 's/security-cdn.debian.org/mirrors.tuna.tsinghua.edu.cn/' /etc/apt/sources.list \
+;fi
 
-# RUN apt-get install bash
-
-RUN docker-php-ext-install pdo_pgsql \
-  && docker-php-ext-configure zip --with-libzip \
-  && docker-php-ext-install zip \
-  && docker-php-ext-install pdo_mysql \
-  && docker-php-ext-configure gd \
-    --with-jpeg-dir=/usr/lib \
-    --with-freetype-dir=/usr/include/freetype2 && \
-    docker-php-ext-install gd
-
-RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
+RUN set -xe; \
+    apt-get update -yqq && \
+    pecl channel-update pecl.php.net && \
+    apt-get install -yqq \
+      apt-utils \
+      libzip-dev zip unzip && \
+      docker-php-ext-configure zip; \
+      docker-php-ext-install zip && \
+      php -m | grep -q 'zip'
 
 RUN apt update -yqq && \
     apt-get install -y nodejs
@@ -224,6 +236,16 @@ RUN if [ ${INSTALL_OPCACHE} = true ]; then \
 COPY ./opcache.ini /usr/local/etc/php/conf.d/opcache.ini
 
 ###########################################################################
+# Mysqli Modifications:
+###########################################################################
+
+ARG INSTALL_MYSQLI=false
+
+RUN if [ ${INSTALL_MYSQLI} = true ]; then \
+    docker-php-ext-install mysqli \
+;fi
+
+###########################################################################
 # Human Language and Character Encoding Support:
 ###########################################################################
 
@@ -234,16 +256,6 @@ RUN if [ ${INSTALL_INTL} = true ]; then \
     apt-get install -y zlib1g-dev libicu-dev g++ && \
     docker-php-ext-configure intl && \
     docker-php-ext-install intl \
-;fi
-
-###########################################################################
-# Mysqli Modifications:
-###########################################################################
-
-ARG INSTALL_MYSQLI=false
-
-RUN if [ ${INSTALL_MYSQLI} = true ]; then \
-    docker-php-ext-install mysqli \
 ;fi
 
 
@@ -356,7 +368,7 @@ RUN composer global require "squizlabs/php_codesniffer=*"
 # Check PHP version:
 ###########################################################################
 
-RUN php -v | head -n 1 | grep -q "PHP 7.3"
+RUN php -v | head -n 1 | grep -q "PHP 7.4"
 
 ###########################################################################
 # Configure supervisor:
@@ -369,11 +381,6 @@ RUN echo 'alias startsupervisor="supervisord -c /etc/supervisor/supervisord.conf
 ###########################################################################
 # Configure npm modules for laravel queues:
 ###########################################################################
-
-RUN npm install -g uuid
-RUN npm install -g node-rsa
-RUN npm install -g randomstring
-RUN npm install -g minimist
 
 #
 #--------------------------------------------------------------------------
