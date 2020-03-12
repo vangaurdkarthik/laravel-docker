@@ -7,22 +7,24 @@ RUN set -eux; \
     apt-get update; \
     apt-get upgrade -y; \
     apt-get install -y --no-install-recommends \
-            curl \
-            nano \
-            git \
-            wget \
-            bash \
-            unzip \
-            supervisor \
-            libmemcached-dev \
-            libz-dev \
-            libpq-dev \
-            libjpeg-dev \
-            libpng-dev \
-            libfreetype6-dev \
-            libssl-dev \
-            libmcrypt-dev \
-            libonig-dev; \
+    curl \
+    nano \
+    git \
+    wget \
+    bash \
+    unzip \
+    supervisor \
+    libmemcached-dev \
+    libz-dev \
+    libpq-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libssl-dev \
+    libmcrypt-dev \
+    libonig-dev; \
+    nodejs \
+    nodejs-npm \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
@@ -55,9 +57,6 @@ RUN set -xe; \
       docker-php-ext-configure zip; \
       docker-php-ext-install zip && \
       php -m | grep -q 'zip'
-
-RUN apt update -yqq && \
-    apt-get install -y nodejs
 
 #
 #--------------------------------------------------------------------------
