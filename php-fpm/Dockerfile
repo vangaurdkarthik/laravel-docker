@@ -28,11 +28,9 @@ RUN set -eux; \
 RUN set -eux; \
     docker-php-ext-install pdo_mysql; \
     docker-php-ext-install pdo_pgsql; \
-    docker-php-ext-configure gd \
             --prefix=/usr \
             --with-jpeg \
             --with-freetype; \
-    docker-php-ext-install gd; \
     php -r 'var_dump(gd_info());'
 
 RUN unlink /etc/localtime
@@ -152,6 +150,17 @@ RUN if [ ${INSTALL_ZIP_ARCHIVE} = true ]; then \
     docker-php-ext-configure zip --with-libzip && \
     # Install the zip extension
     docker-php-ext-install zip \
+;fi
+
+###########################################################################
+# GD
+###########################################################################
+
+ARG INSTALL_GD=false
+
+RUN if [ ${INSTALL_GD} = true ]; then \
+    # Install the gd extension
+    docker-php-ext-install gd \
 ;fi
 
 ###########################################################################
