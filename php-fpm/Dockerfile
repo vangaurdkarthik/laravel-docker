@@ -23,8 +23,6 @@ RUN set -eux; \
     libssl-dev \
     libmcrypt-dev \
     libonig-dev; \
-    nodejs \
-    nodejs-npm \
     rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
@@ -56,6 +54,9 @@ RUN set -xe; \
       docker-php-ext-install zip && \
       php -m | grep -q 'zip'
 
+RUN apt update -yqq && \
+    apt-get install -y nodejs
+
 #
 #--------------------------------------------------------------------------
 # Optional Software's Installation
@@ -66,6 +67,20 @@ RUN set -xe; \
 # Example:
 #   - INSTALL_ZIP_ARCHIVE=true
 #
+
+###########################################################################
+# NODE:
+###########################################################################
+
+RUN if [ ${INSTALL_NODE} = true ]; then \
+    # Install nvm (A Node Version Manager)
+    mkdir -p $ /home/root/.nvm && \
+    curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.11/install.sh | bash \
+        && . $ /home/root/.nvm/nvm.sh \
+        && nvm install node \
+        && nvm use node \
+        && nvm alias node \
+;fi
 
 ###########################################################################
 # SOAP:

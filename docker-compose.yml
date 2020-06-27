@@ -92,7 +92,7 @@ services:
             context: ./mongodb
             dockerfile: Dockerfile
         volumes:
-            - '${MONGODB_DATA}:/data/db'
+            - mongodb_data:/data/db
         networks:
             - code-network
     postgres:
@@ -121,7 +121,7 @@ services:
         ports:
             - "6379:6379"
         volumes:
-            - '${REDIS_DATA}:/data/redis'
+            - ${REDIS_DATA}:/data/redis
         networks:
             - code-network
     jenkins:
@@ -150,4 +150,6 @@ volumes:
   pgdata:
     external: true
   jenkinsdata:
+    external: true
+  mongodb_data:
     external: true
