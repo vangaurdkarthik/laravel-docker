@@ -25,14 +25,8 @@ RUN set -eux; \
     libonig-dev; \
     rm -rf /var/lib/apt/lists/*
 
-RUN set -eux; \
-    docker-php-ext-install pdo_mysql; \
-    docker-php-ext-install pdo_pgsql; \
-            --prefix=/usr \
-            --with-jpeg \
-            --with-freetype; \
-    php -r 'var_dump(gd_info());'
-
+RUN unlink /etc/localtime
+RUN ln -s /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 RUN unlink /etc/localtime
 RUN ln -s /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 
@@ -145,10 +139,6 @@ ARG INSTALL_MONGO=false
 
 RUN if [ ${INSTALL_MONGO} = true ]; then \
     # Install the mongodb extension
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install mongo && \
-      docker-php-ext-enable mongo \
-    ;fi && \
     pecl install mongodb && \
     docker-php-ext-enable mongodb \
 ;fi
