@@ -71,21 +71,7 @@ MONGODB_PASS=pass
 MONGODB_PORT=27017
 MONGODB_DATA=./mongodb/data/db
 
-#----------#
-# POSTGRES #
-#----------#
-POSTGRES_DATA=./postgres/data/db/
-POSTGRES_USER=root
-POSTGRES_PASS=123456
-
 #-------#
 # REDIS #
 #-------#
 REDIS_DATA=./redis/data/
-
-#---------#
-# JENKINS #
-#---------#
-JENKINS_HOST_HTTP_PORT=8090
-JENKINS_HOST_SLAVE_AGENT_PORT=50000
-JENKINS_HOME=./jenkins/jenkins_home
