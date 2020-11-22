@@ -27,8 +27,6 @@ RUN set -eux; \
 
 RUN unlink /etc/localtime
 RUN ln -s /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
-RUN unlink /etc/localtime
-RUN ln -s /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
 
 ARG CHANGE_SOURCE=false
 RUN if [ ${CHANGE_SOURCE} = true ]; then \
@@ -256,6 +254,7 @@ ARG INSTALL_MYSQLI=false
 
 RUN if [ ${INSTALL_MYSQLI} = true ]; then \
     docker-php-ext-install mysqli \
+    && docker-php-ext-install pdo pdo_mysql
 ;fi
 
 ###########################################################################
