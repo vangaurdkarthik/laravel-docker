@@ -254,7 +254,7 @@ ARG INSTALL_MYSQLI=false
 
 RUN if [ ${INSTALL_MYSQLI} = true ]; then \
     docker-php-ext-install mysqli \
-    && docker-php-ext-install pdo pdo_mysql
+    && docker-php-ext-install pdo pdo_mysql \
 ;fi
 
 ###########################################################################
@@ -269,7 +269,6 @@ RUN if [ ${INSTALL_INTL} = true ]; then \
     docker-php-ext-configure intl && \
     docker-php-ext-install intl \
 ;fi
-
 
 ###########################################################################
 # LDAP:
